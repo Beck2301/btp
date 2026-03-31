@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ListingKind {
+  LOST
+  FOUND
+}
+
+enum ListingStatus {
+  ACTIVE
+  RESOLVED
+  REPORTED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts         Account[]
+  sessions         Session[]
+  listings         Listing[]
+  contactRequests  ContactRequest[] @relation("ContactFromUser")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Listing {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind            ListingKind
+  countryCode     String        @db.Char(2)
+  region          String?
+  plateRaw        String
+  plateNormalized String
+  description     String        @db.Text
+  locationNote    String?       @db.Text
+  status          ListingStatus @default(ACTIVE)
+  /// Opcional: enlace WhatsApp (solo dígitos, sin +) para contacto directo si el usuario lo permite
+  whatsappDigits  String?
+
+  contactRequests ContactRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([plateNormalized])
+  @@index([countryCode])
+  @@index([status])
+}
+
+model ContactRequest {
+  id         String   @id @default(cuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  fromEmail  String
+  message    String   @db.Text
+  fromUserId String?
+  fromUser   User?    @relation("ContactFromUser", fields: [fromUserId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@index([listingId])
+}
