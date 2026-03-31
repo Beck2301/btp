@@ -24,7 +24,7 @@ export function ListingFeedList({ listings }: { listings: ListingFeedRow[] }) {
         <li key={row.id} className="min-w-0">
           <Link
             href={`/placa/${row.id}`}
-            className={`group feed-card relative flex flex-col border-l-4 pl-5 transition duration-200 hover:-translate-y-0.5 ${kindAccent[row.kind]}`}
+            className={`group feed-card relative flex flex-col border-l-4 pl-4 pr-4 py-4 sm:pl-5 transition duration-200 hover:-translate-y-0.5 ${kindAccent[row.kind]}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1 space-y-2">
